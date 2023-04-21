@@ -4,7 +4,7 @@ import json
 import abc
 import hashlib
 import typing as t
-from utils import dict_2_obj
+from utils import dict2obj
 from flask import request
 from decrypt import AESCipher
 
@@ -19,8 +19,8 @@ class Event(object):
         event = dict_data.get("event")
         if header is None or event is None:
             raise InvalidEventException("request is not callback event(v2)")
-        self.header = dict_2_obj(header)
-        self.event = dict_2_obj(event)
+        self.header = dict2obj(header)
+        self.event = dict2obj(event)
         self._validate(token, encrypt_key)
 
     def _validate(self, token, encrypt_key):
@@ -48,6 +48,7 @@ class MessageReceiveEvent(Event):
     def event_type():
         return "im.message.receive_v1"
 
+
 class MessageReadEvent(Event):
     # message receive event defined in https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
 
@@ -57,10 +58,9 @@ class MessageReadEvent(Event):
 
 
 class UrlVerificationEvent(Event):
-
     # special event: url verification event
     def __init__(self, dict_data):
-        self.event = dict_2_obj(dict_data)
+        self.event = dict2obj(dict_data)
 
     @staticmethod
     def event_type():
@@ -106,9 +106,11 @@ class EventManager(object):
         event_type = dict_data.get("header").get("event_type")
         # build event
         if event_type not in EventManager.event_type_map:
-            print('skip', event_type)
+            print("skip", event_type)
             return None, None
-        event = EventManager.event_type_map.get(event_type)(dict_data, token, encrypt_key)
+        event = EventManager.event_type_map.get(event_type)(
+            dict_data, token, encrypt_key
+        )
         # get handler
         return EventManager.event_callback_map.get(event_type), event
 

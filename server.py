@@ -7,9 +7,12 @@ from api import MessageApiClient
 from event import MessageReceiveEvent, UrlVerificationEvent, MessageReadEvent, EventManager
 from flask import Flask, jsonify
 from dotenv import load_dotenv, find_dotenv
+from utils import obj2dict
 
 # load env parameters form file named .env
 load_dotenv(find_dotenv())
+
+writer = open('event_data.txt', 'a')
 
 app = Flask(__name__)
 
@@ -40,7 +43,9 @@ def request_read_handler(req_data: MessageReadEvent):
 def message_receive_event_handler(req_data: MessageReceiveEvent):
     sender_id = req_data.event.sender.sender_id
     message = req_data.event.message
-    print('recv:', json.dumps(message))
+    writer.write(json.dumps(obj2dict(req_data)))
+    writer.write('\n')
+    writer.flush()
     if message.message_type != "text":
         logging.warning("Other types of messages have not been processed yet")
         return jsonify()
@@ -48,6 +53,7 @@ def message_receive_event_handler(req_data: MessageReceiveEvent):
     open_id = sender_id.open_id
     text_content = message.content
     # echo text message
+    print(text_content)
     message_api_client.send_text_with_open_id(open_id, text_content)
     return jsonify()
 
