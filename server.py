@@ -12,12 +12,11 @@ from event import (
 )
 from flask import Flask, jsonify
 from dotenv import load_dotenv, find_dotenv
+from redis_client import push_msg
 from utils import obj2dict
 
 # load env parameters form file named .env
 load_dotenv(find_dotenv())
-
-writer = open("event_data.txt", "a")
 
 app = Flask(__name__)
 
@@ -48,20 +47,8 @@ def request_read_handler(req_data: MessageReadEvent):
 
 @event_manager.register("im.message.receive_v1")
 def message_receive_event_handler(req_data: MessageReceiveEvent):
-    sender_id = req_data.event.sender.sender_id
-    message = req_data.event.message
-    writer.write(json.dumps(obj2dict(req_data)))
-    writer.write("\n")
-    writer.flush()
-    if message.message_type != "text":
-        logging.warning("Other types of messages have not been processed yet")
-        return jsonify()
-        # get open_id and text_content
-    open_id = sender_id.open_id
-    text_content = message.content
-    # echo text message
-    print(text_content)
-    message_api_client.send_text_with_open_id(open_id, text_content)
+    # just put to queue
+    push_msg(json.dumps(obj2dict(req_data)))
     return jsonify()
 
 
